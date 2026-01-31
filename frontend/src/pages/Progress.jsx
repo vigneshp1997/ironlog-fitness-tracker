@@ -365,7 +365,7 @@ export default function Progress() {
                             Max Weight Lifted
                           </p>
                           <p className="stat-value text-4xl text-primary">
-                            {Math.max(...progressData.map(d => d.max_weight || 0))} lbs
+                            {Math.max(...progressData.map(d => d.max_weight || 0))} kg
                           </p>
                         </div>
                         <div>
@@ -373,7 +373,7 @@ export default function Progress() {
                             Best Volume Session
                           </p>
                           <p className="stat-value text-4xl text-accent">
-                            {Math.max(...progressData.map(d => d.total_volume || 0)).toLocaleString()} lbs
+                            {Math.max(...progressData.map(d => d.total_volume || 0)).toLocaleString()} kg
                           </p>
                         </div>
                       </>
