@@ -100,7 +100,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           icon={Dumbbell}
           label="Total Workouts"
@@ -124,10 +124,17 @@ export default function Dashboard() {
         />
         <StatCard
           icon={Trophy}
-          label="Volume (lbs)"
+          label="Volume (kg)"
           value={stats?.total_volume?.toLocaleString() || 0}
           subValue="Weight × Reps"
           color="#FF9500"
+        />
+        <StatCard
+          icon={Zap}
+          label="Calories Burned"
+          value={stats?.total_calories?.toLocaleString() || 0}
+          subValue="Estimated kcal"
+          color="#A855F7"
         />
       </div>
 
