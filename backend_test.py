@@ -261,6 +261,112 @@ class WorkoutTrackerAPITester:
             self.log_test("Get Dashboard Stats", False, str(e))
             return False
 
+    def test_stats_date_filtering(self):
+        """Test stats endpoint with date filtering"""
+        try:
+            # Test with date range parameters
+            today = datetime.now()
+            start_date = (today - timedelta(days=30)).strftime("%Y-%m-%d")
+            end_date = today.strftime("%Y-%m-%d")
+            
+            # Test stats with date range
+            response = requests.get(
+                f"{self.api_url}/stats?start_date={start_date}&end_date={end_date}", 
+                timeout=10
+            )
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                stats = response.json()
+                details += f", Stats with date filter (last 30 days): {stats['total_workouts']} workouts"
+                
+                # Test without date filter for comparison
+                all_stats_response = requests.get(f"{self.api_url}/stats", timeout=10)
+                if all_stats_response.status_code == 200:
+                    all_stats = all_stats_response.json()
+                    details += f", All-time stats: {all_stats['total_workouts']} workouts"
+                    
+                    # Filtered stats should be <= all-time stats
+                    if stats['total_workouts'] <= all_stats['total_workouts']:
+                        details += " (✓ Date filtering working)"
+                    else:
+                        success = False
+                        details += " (✗ Date filtering may not be working)"
+                else:
+                    success = False
+                    details += ", Failed to get all-time stats for comparison"
+            
+            self.log_test("Stats Date Filtering", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Stats Date Filtering", False, str(e))
+            return False
+
+    def test_trends_endpoint(self):
+        """Test trends endpoint for dashboard charts"""
+        try:
+            # Test basic trends endpoint
+            response = requests.get(f"{self.api_url}/trends", timeout=10)
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                trends = response.json()
+                details += f", Found {len(trends)} trend data points"
+                
+                # Check trends data structure
+                if trends and isinstance(trends[0], dict):
+                    required_fields = ['date', 'workouts', 'sets', 'volume', 'calories']
+                    first_trend = trends[0]
+                    missing_fields = [field for field in required_fields if field not in first_trend]
+                    if missing_fields:
+                        success = False
+                        details += f", Missing fields: {missing_fields}"
+                    else:
+                        details += ", Trend structure valid"
+                        
+                        # Verify data types
+                        sample = first_trend
+                        if (isinstance(sample['workouts'], int) and 
+                            isinstance(sample['sets'], int) and
+                            isinstance(sample['volume'], (int, float)) and
+                            isinstance(sample['calories'], (int, float))):
+                            details += " (✓ Data types correct)"
+                        else:
+                            success = False
+                            details += " (✗ Invalid data types)"
+                
+                # Test with date range parameters
+                today = datetime.now()
+                start_date = (today - timedelta(days=7)).strftime("%Y-%m-%d")
+                end_date = today.strftime("%Y-%m-%d")
+                
+                filtered_response = requests.get(
+                    f"{self.api_url}/trends?start_date={start_date}&end_date={end_date}", 
+                    timeout=10
+                )
+                
+                if filtered_response.status_code == 200:
+                    filtered_trends = filtered_response.json()
+                    details += f", Filtered trends (7 days): {len(filtered_trends)} points"
+                    
+                    # Filtered should have <= data points than unfiltered
+                    if len(filtered_trends) <= len(trends):
+                        details += " (✓ Date filtering working)"
+                    else:
+                        success = False
+                        details += " (✗ Date filtering may not be working)"
+                else:
+                    success = False
+                    details += f", Date filtering failed: {filtered_response.status_code}"
+            
+            self.log_test("Trends Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Trends Endpoint", False, str(e))
+            return False
+
     def test_create_custom_exercise(self):
         """Test creating a custom exercise"""
         try:
