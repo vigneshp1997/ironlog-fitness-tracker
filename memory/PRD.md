@@ -53,10 +53,10 @@ Build a daily weight tracker web app to track sets and reps across exercises in 
 - [x] Exercise database
 - [x] Workout logging
 - [x] Basic stats
+- [x] Workout templates
 
 ### P1 (Important) - Future
 - [ ] Personal records tracking per exercise
-- [ ] Workout templates/routines
 - [ ] Export data to CSV
 
 ### P2 (Nice to have) - Future
