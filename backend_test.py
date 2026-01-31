@@ -630,6 +630,8 @@ class WorkoutTrackerAPITester:
         except Exception as e:
             self.log_test("Calorie Calculation", False, str(e))
             return False
+
+    def test_get_recent_workouts(self):
         """Test getting recent workouts"""
         try:
             response = requests.get(f"{self.api_url}/recent-workouts", timeout=10)
