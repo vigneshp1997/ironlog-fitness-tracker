@@ -466,6 +466,7 @@ async def get_progress(exercise_id: str, days: int = Query(default=30, le=365)):
         date = workout.get("date", "")[:10]
         for entry in workout.get("entries", []):
             if entry.get("exercise_id") == exercise_id:
+                entry_category = entry.get("category", "strength")
                 if date not in progress_by_date:
                     progress_by_date[date] = {
                         "date": date,
@@ -473,7 +474,8 @@ async def get_progress(exercise_id: str, days: int = Query(default=30, le=365)):
                         "total_volume": 0,
                         "total_reps": 0,
                         "duration": 0,
-                        "distance": 0
+                        "distance": 0,
+                        "calories": 0
                     }
                 
                 for set_data in entry.get("sets", []):
@@ -488,6 +490,12 @@ async def get_progress(exercise_id: str, days: int = Query(default=30, le=365)):
                     progress_by_date[date]["total_reps"] += reps
                     progress_by_date[date]["duration"] += duration
                     progress_by_date[date]["distance"] += distance
+                    
+                    # Calculate calories
+                    if entry_category == "cardio":
+                        progress_by_date[date]["calories"] += calculate_cardio_calories(duration)
+                    else:
+                        progress_by_date[date]["calories"] += calculate_strength_calories(weight, reps)
     
     return sorted(progress_by_date.values(), key=lambda x: x["date"])
 
