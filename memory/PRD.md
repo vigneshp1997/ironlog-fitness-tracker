@@ -40,6 +40,10 @@ Build a daily weight tracker web app to track sets and reps across exercises in 
 - ✅ **Calories Burned Tracking** - Automatic estimation based on:
   - Strength: weight × reps × 0.065 (metabolic cost formula)
   - Cardio: MET × bodyweight × duration (using moderate intensity MET=7)
+- ✅ **Dashboard Date Filter & Trend Charts**
+  - Filter by: Last 7/30/90 Days, Year to Date, All Time, Custom Range
+  - 4 trend charts: Calories, Volume, Sets, Workouts per day
+  - All stat cards update based on selected date range
 
 ## API Endpoints
 - GET /api/exercises - List exercises with optional filtering
