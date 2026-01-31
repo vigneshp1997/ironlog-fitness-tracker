@@ -371,15 +371,25 @@ async def get_stats():
     total_exercises_logged = 0
     total_sets = 0
     total_volume = 0.0
+    total_calories = 0.0
     
     # Calculate totals
     for workout in workouts:
         for entry in workout.get("entries", []):
             total_exercises_logged += 1
+            entry_category = entry.get("category", "strength")
             for set_data in entry.get("sets", []):
                 total_sets += 1
-                if set_data.get("weight") and set_data.get("reps"):
-                    total_volume += set_data["weight"] * set_data["reps"]
+                if entry_category == "cardio":
+                    duration = set_data.get("duration_minutes", 0) or 0
+                    if duration > 0:
+                        total_calories += calculate_cardio_calories(duration)
+                else:
+                    weight = set_data.get("weight", 0) or 0
+                    reps = set_data.get("reps", 0) or 0
+                    if weight > 0 and reps > 0:
+                        total_volume += weight * reps
+                        total_calories += calculate_strength_calories(weight, reps)
     
     # Calculate streaks
     today = datetime.now(timezone.utc).date()
@@ -434,6 +444,7 @@ async def get_stats():
         total_exercises_logged=total_exercises_logged,
         total_sets=total_sets,
         total_volume=round(total_volume, 1),
+        total_calories=round(total_calories, 1),
         current_streak=current_streak,
         longest_streak=longest_streak,
         workouts_this_week=workouts_this_week,
