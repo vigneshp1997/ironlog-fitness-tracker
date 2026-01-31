@@ -459,6 +459,46 @@ async def get_recent_workouts():
     workouts = await db.workouts.find({}, {"_id": 0}).sort("date", -1).to_list(5)
     return workouts
 
+# Template Routes
+@api_router.get("/templates", response_model=List[WorkoutTemplate])
+async def get_templates():
+    templates = await db.templates.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return templates
+
+@api_router.post("/templates", response_model=WorkoutTemplate)
+async def create_template(template: WorkoutTemplateCreate):
+    template_obj = WorkoutTemplate(**template.model_dump())
+    doc = template_obj.model_dump()
+    await db.templates.insert_one(doc)
+    return template_obj
+
+@api_router.get("/templates/{template_id}", response_model=WorkoutTemplate)
+async def get_template(template_id: str):
+    template = await db.templates.find_one({"id": template_id}, {"_id": 0})
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return template
+
+@api_router.put("/templates/{template_id}", response_model=WorkoutTemplate)
+async def update_template(template_id: str, update: WorkoutTemplateUpdate):
+    template = await db.templates.find_one({"id": template_id}, {"_id": 0})
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    update_data = {k: v for k, v in update.model_dump().items() if v is not None}
+    if update_data:
+        await db.templates.update_one({"id": template_id}, {"$set": update_data})
+    
+    updated = await db.templates.find_one({"id": template_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/templates/{template_id}")
+async def delete_template(template_id: str):
+    result = await db.templates.delete_one({"id": template_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return {"message": "Template deleted"}
+
 # Health check
 @api_router.get("/health")
 async def health_check():
