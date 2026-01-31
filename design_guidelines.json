@@ -1,0 +1,147 @@
+{
+  "identity": {
+    "persona": "E1",
+    "philosophy": "Fusion over Imitation. Emotion First. Content is King.",
+    "anti_patterns": [
+      "Purple/Teal CTA defaults",
+      "Inter everywhere for headings",
+      "Center-everything layouts",
+      "Gradient overload (>20%)"
+    ]
+  },
+  "typography": {
+    "strategy": "The Performance Pro",
+    "fonts": {
+      "headings": {
+        "family": "Barlow Condensed, sans-serif",
+        "weights": ["700", "900"],
+        "usage": "Headings, Data Values, Big Stats",
+        "google_font_url": "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&display=swap"
+      },
+      "body": {
+        "family": "Inter, sans-serif",
+        "weights": ["400", "500"],
+        "usage": "Paragraphs, UI Labels, Table Data"
+      }
+    },
+    "rules": [
+      "Headings > 32px must use tracking-tight",
+      "Overlines/Labels must be Uppercase + tracking-widest + text-xs",
+      "Line height: leading-none for headers, leading-relaxed for body"
+    ]
+  },
+  "colors": {
+    "theme": "dark",
+    "palette": {
+      "background": "#0A0A0A",
+      "foreground": "#FFFFFF",
+      "card": "#121212",
+      "card_foreground": "#FFFFFF",
+      "primary": "#007AFF",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#1A1A1A",
+      "secondary_foreground": "#A1A1AA",
+      "accent": "#FF3B30",
+      "accent_foreground": "#FFFFFF",
+      "border": "#27272A",
+      "input": "#27272A",
+      "ring": "#007AFF"
+    },
+    "archetype": "The Performance Pro",
+    "rules": [
+      "Use Deep Obsidian (#0A0A0A) as primary anchor",
+      "Pair with Pure White for data clarity",
+      "Use Volt Blue (#007AFF) as kinetic trigger",
+      "Use Electric Blaze (#FF3B30) for destructive/high-intensity actions",
+      "Avoid 'Vibrating' Lime"
+    ]
+  },
+  "layout": {
+    "spacing": {
+      "philosophy": "Generous. 2-3x more than typical.",
+      "scale": ["p-1", "p-2", "p-4", "p-6", "p-8", "p-12", "p-16", "p-20", "p-24", "p-32"],
+      "rule": "Containers with borders must have internal padding (p-6 or p-8)"
+    },
+    "grid_system": {
+      "dashboard": "Mode B: High Density Grid (grid-cols-1 md:grid-cols-3 lg:grid-cols-4, gap-4)",
+      "marketing": "Mode A: The Tetris Grid (grid-cols-1 md:grid-cols-8 lg:grid-cols-12, gap-8)"
+    },
+    "alignment": {
+      "mobile": "Always start with grid-cols-1",
+      "optical": "Add extra padding to visually center text blocks next to icons"
+    }
+  },
+  "visual_enhancers": {
+    "tracing_beam": {
+      "usage": "Active workout cards, High-priority features",
+      "implementation": "Glowing gradient line traveling around container edge"
+    },
+    "glassmorphism": {
+      "usage": "Sticky Headers, Floating Navs",
+      "style": "bg-black/60 backdrop-blur-xl border-white/10"
+    },
+    "grid_borders": {
+      "usage": "Data-heavy Dashboards, History Lists",
+      "style": "border-r border-b border-border/40"
+    },
+    "textures": {
+      "usage": "Backgrounds to kill digital flatness",
+      "type": "Subtle noise or grain overlay"
+    }
+  },
+  "components": {
+    "library": "shadcn/ui",
+    "customization": [
+      "Remove 'Vercel-look' by sharpening radii or using specific borders",
+      "Use 'sonner' for toasts",
+      "Use 'recharts' for data visualization",
+      "Buttons: Sharp edges or Pill-shaped, no default rounded-md"
+    ],
+    "specifics": {
+      "cards": "Flat background, 1px subtle border, no shadow by default. Hover: lift + shadow.",
+      "inputs": "Shadcn Input, customized to match dark theme (bg-secondary)",
+      "charts": "Use Shadcn chart components or Recharts directly. Colors must match palette."
+    }
+  },
+  "images": {
+    "hero": {
+      "url": "https://images.unsplash.com/photo-1614367674345-f414b2be3e5b",
+      "alt": "Man in black tank top in dark gym",
+      "usage": "Landing page hero, motivational background"
+    },
+    "cardio": {
+      "url": "https://images.unsplash.com/photo-1767794640954-de3a95512394",
+      "alt": "Woman running at night urban",
+      "usage": "Cardio section, running tracking"
+    },
+    "weights": {
+      "url": "https://images.unsplash.com/photo-1526401485004-46910ecc8e51",
+      "alt": "Rogue bumper plates detail",
+      "usage": "Strength training section, weight logging"
+    },
+    "gym_atmosphere": {
+      "url": "https://images.unsplash.com/photo-1700784795176-7ff886439d79",
+      "alt": "Man squatting on bench",
+      "usage": "General atmosphere, workout history"
+    }
+  },
+  "universal_guidelines": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts. Create depth through layered design elements.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur).",
+    "Every interaction needs micro-animations - hover states, transitions.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Subtle grain textures, noise overlays, custom cursors.",
+    "All interactive elements MUST include data-testid attribute."
+  ],
+  "instructions_to_main_agent": [
+    "1. Install 'Barlow Condensed' font from Google Fonts.",
+    "2. Configure Tailwind colors in tailwind.config.js to match the 'The Performance Pro' palette.",
+    "3. Create a 'Layout' component that enforces the dark theme and includes the noise texture.",
+    "4. Build the 'Dashboard' using the Bento Grid Mode B.",
+    "5. Implement the 'Exercise Library' using a dense grid with 'Grid Borders'.",
+    "6. Use the provided images for the respective sections.",
+    "7. Ensure all charts use the defined chart colors (Volt Blue, Electric Blaze).",
+    "8. Add 'data-testid' to all interactive elements."
+  ]
+}
