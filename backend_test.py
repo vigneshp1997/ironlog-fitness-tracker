@@ -1,0 +1,406 @@
+import requests
+import sys
+import json
+from datetime import datetime, timedelta
+
+class WorkoutTrackerAPITester:
+    def __init__(self, base_url="https://fitness-metrics-30.preview.emergentagent.com"):
+        self.base_url = base_url
+        self.api_url = f"{base_url}/api"
+        self.tests_run = 0
+        self.tests_passed = 0
+        self.test_results = []
+
+    def log_test(self, name, success, details=""):
+        """Log test result"""
+        self.tests_run += 1
+        if success:
+            self.tests_passed += 1
+            print(f"✅ {name} - PASSED")
+        else:
+            print(f"❌ {name} - FAILED: {details}")
+        
+        self.test_results.append({
+            "test": name,
+            "status": "PASSED" if success else "FAILED",
+            "details": details
+        })
+
+    def test_health_check(self):
+        """Test health endpoint"""
+        try:
+            response = requests.get(f"{self.api_url}/health", timeout=10)
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            if success:
+                details += f", Response: {response.json()}"
+            self.log_test("Health Check", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Health Check", False, str(e))
+            return False
+
+    def test_get_exercises(self):
+        """Test getting all exercises"""
+        try:
+            response = requests.get(f"{self.api_url}/exercises", timeout=10)
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                exercises = response.json()
+                exercise_count = len(exercises)
+                details += f", Found {exercise_count} exercises"
+                
+                # Verify we have 100+ exercises as expected
+                if exercise_count >= 100:
+                    details += " (✓ 100+ exercises requirement met)"
+                else:
+                    success = False
+                    details += f" (✗ Expected 100+, got {exercise_count})"
+                
+                # Check exercise structure
+                if exercises and isinstance(exercises[0], dict):
+                    required_fields = ['id', 'name', 'category', 'muscle_group']
+                    first_exercise = exercises[0]
+                    missing_fields = [field for field in required_fields if field not in first_exercise]
+                    if missing_fields:
+                        success = False
+                        details += f", Missing fields: {missing_fields}"
+                    else:
+                        details += ", Exercise structure valid"
+                        
+            self.log_test("Get All Exercises", success, details)
+            return success, exercises if success else []
+        except Exception as e:
+            self.log_test("Get All Exercises", False, str(e))
+            return False, []
+
+    def test_exercise_filtering(self, exercises):
+        """Test exercise filtering by muscle group and search"""
+        try:
+            # Test muscle group filter
+            response = requests.get(f"{self.api_url}/exercises?muscle_group=chest", timeout=10)
+            success = response.status_code == 200
+            details = f"Muscle filter status: {response.status_code}"
+            
+            if success:
+                chest_exercises = response.json()
+                details += f", Found {len(chest_exercises)} chest exercises"
+                
+                # Verify all returned exercises are chest exercises
+                if chest_exercises:
+                    non_chest = [ex for ex in chest_exercises if ex.get('muscle_group') != 'chest']
+                    if non_chest:
+                        success = False
+                        details += f", Found {len(non_chest)} non-chest exercises in results"
+                    else:
+                        details += " (✓ All results are chest exercises)"
+
+            # Test search filter
+            if success:
+                response = requests.get(f"{self.api_url}/exercises?search=bench", timeout=10)
+                search_success = response.status_code == 200
+                if search_success:
+                    search_results = response.json()
+                    details += f", Search 'bench' found {len(search_results)} exercises"
+                    
+                    # Verify search results contain 'bench' in name
+                    if search_results:
+                        non_matching = [ex for ex in search_results if 'bench' not in ex.get('name', '').lower()]
+                        if non_matching:
+                            success = False
+                            details += f", {len(non_matching)} results don't match search term"
+                        else:
+                            details += " (✓ All search results match)"
+                else:
+                    success = False
+                    details += f", Search failed with status {response.status_code}"
+
+            self.log_test("Exercise Filtering", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Exercise Filtering", False, str(e))
+            return False
+
+    def test_create_workout(self):
+        """Test creating a workout"""
+        try:
+            # First get an exercise to use
+            exercises_response = requests.get(f"{self.api_url}/exercises?limit=1", timeout=10)
+            if exercises_response.status_code != 200:
+                self.log_test("Create Workout", False, "Failed to get exercises for test")
+                return False, None
+
+            exercises = exercises_response.json()
+            if not exercises:
+                self.log_test("Create Workout", False, "No exercises available for test")
+                return False, None
+
+            exercise = exercises[0]
+            
+            # Create test workout data
+            workout_data = {
+                "date": datetime.now().strftime("%Y-%m-%d"),
+                "entries": [
+                    {
+                        "exercise_id": exercise["id"],
+                        "exercise_name": exercise["name"],
+                        "category": exercise["category"],
+                        "sets": [
+                            {
+                                "set_number": 1,
+                                "reps": 10 if exercise["category"] == "strength" else None,
+                                "weight": 135.0 if exercise["category"] == "strength" else None,
+                                "duration_minutes": 30.0 if exercise["category"] == "cardio" else None,
+                                "distance_km": 5.0 if exercise["category"] == "cardio" else None
+                            }
+                        ]
+                    }
+                ],
+                "notes": "Test workout from API testing"
+            }
+
+            response = requests.post(
+                f"{self.api_url}/workouts",
+                json=workout_data,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            workout_id = None
+            if success:
+                created_workout = response.json()
+                workout_id = created_workout.get("id")
+                details += f", Created workout ID: {workout_id}"
+                
+                # Verify workout structure
+                required_fields = ['id', 'date', 'entries', 'created_at']
+                missing_fields = [field for field in required_fields if field not in created_workout]
+                if missing_fields:
+                    success = False
+                    details += f", Missing fields: {missing_fields}"
+                else:
+                    details += ", Workout structure valid"
+            else:
+                try:
+                    error_data = response.json()
+                    details += f", Error: {error_data}"
+                except:
+                    details += f", Response: {response.text[:200]}"
+
+            self.log_test("Create Workout", success, details)
+            return success, workout_id
+        except Exception as e:
+            self.log_test("Create Workout", False, str(e))
+            return False, None
+
+    def test_get_workouts(self):
+        """Test getting workouts"""
+        try:
+            response = requests.get(f"{self.api_url}/workouts", timeout=10)
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                workouts = response.json()
+                details += f", Found {len(workouts)} workouts"
+                
+                # Check workout structure if any exist
+                if workouts and isinstance(workouts[0], dict):
+                    required_fields = ['id', 'date', 'entries']
+                    first_workout = workouts[0]
+                    missing_fields = [field for field in required_fields if field not in first_workout]
+                    if missing_fields:
+                        success = False
+                        details += f", Missing fields: {missing_fields}"
+                    else:
+                        details += ", Workout structure valid"
+
+            self.log_test("Get Workouts", success, details)
+            return success, workouts if success else []
+        except Exception as e:
+            self.log_test("Get Workouts", False, str(e))
+            return False, []
+
+    def test_get_stats(self):
+        """Test getting dashboard stats"""
+        try:
+            response = requests.get(f"{self.api_url}/stats", timeout=10)
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                stats = response.json()
+                required_fields = [
+                    'total_workouts', 'total_exercises_logged', 'total_sets',
+                    'total_volume', 'current_streak', 'longest_streak',
+                    'workouts_this_week', 'workouts_this_month'
+                ]
+                
+                missing_fields = [field for field in required_fields if field not in stats]
+                if missing_fields:
+                    success = False
+                    details += f", Missing fields: {missing_fields}"
+                else:
+                    details += f", Stats: {stats['total_workouts']} workouts, {stats['total_sets']} sets, {stats['current_streak']} day streak"
+
+            self.log_test("Get Dashboard Stats", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Get Dashboard Stats", False, str(e))
+            return False
+
+    def test_get_recent_workouts(self):
+        """Test getting recent workouts"""
+        try:
+            response = requests.get(f"{self.api_url}/recent-workouts", timeout=10)
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                recent_workouts = response.json()
+                details += f", Found {len(recent_workouts)} recent workouts"
+
+            self.log_test("Get Recent Workouts", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Get Recent Workouts", False, str(e))
+            return False
+
+    def test_get_progress(self, exercise_id=None):
+        """Test getting progress data"""
+        try:
+            # If no exercise_id provided, get one from exercises
+            if not exercise_id:
+                exercises_response = requests.get(f"{self.api_url}/exercises?limit=1", timeout=10)
+                if exercises_response.status_code == 200:
+                    exercises = exercises_response.json()
+                    if exercises:
+                        exercise_id = exercises[0]["id"]
+                    else:
+                        self.log_test("Get Progress", False, "No exercises available for progress test")
+                        return False
+                else:
+                    self.log_test("Get Progress", False, "Failed to get exercises for progress test")
+                    return False
+
+            response = requests.get(f"{self.api_url}/progress/{exercise_id}", timeout=10)
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                progress_data = response.json()
+                details += f", Found {len(progress_data)} progress entries"
+                
+                # Check progress data structure if any exist
+                if progress_data and isinstance(progress_data[0], dict):
+                    required_fields = ['date']
+                    first_entry = progress_data[0]
+                    missing_fields = [field for field in required_fields if field not in first_entry]
+                    if missing_fields:
+                        success = False
+                        details += f", Missing fields: {missing_fields}"
+                    else:
+                        details += ", Progress structure valid"
+
+            self.log_test("Get Progress Data", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Get Progress Data", False, str(e))
+            return False
+
+    def test_delete_workout(self, workout_id):
+        """Test deleting a workout"""
+        if not workout_id:
+            self.log_test("Delete Workout", False, "No workout ID provided")
+            return False
+
+        try:
+            response = requests.delete(f"{self.api_url}/workouts/{workout_id}", timeout=10)
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                result = response.json()
+                details += f", Response: {result}"
+            else:
+                try:
+                    error_data = response.json()
+                    details += f", Error: {error_data}"
+                except:
+                    details += f", Response: {response.text[:200]}"
+
+            self.log_test("Delete Workout", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Delete Workout", False, str(e))
+            return False
+
+    def run_all_tests(self):
+        """Run all API tests"""
+        print("🏋️ Starting Workout Tracker API Tests...")
+        print(f"Testing against: {self.base_url}")
+        print("=" * 60)
+
+        # Test 1: Health check
+        if not self.test_health_check():
+            print("❌ Health check failed - stopping tests")
+            return self.get_summary()
+
+        # Test 2: Get exercises
+        exercises_success, exercises = self.test_get_exercises()
+        if not exercises_success:
+            print("❌ Exercise retrieval failed - stopping tests")
+            return self.get_summary()
+
+        # Test 3: Exercise filtering
+        self.test_exercise_filtering(exercises)
+
+        # Test 4: Create workout
+        workout_success, workout_id = self.test_create_workout()
+
+        # Test 5: Get workouts
+        self.test_get_workouts()
+
+        # Test 6: Get stats
+        self.test_get_stats()
+
+        # Test 7: Get recent workouts
+        self.test_get_recent_workouts()
+
+        # Test 8: Get progress
+        self.test_get_progress()
+
+        # Test 9: Delete workout (if we created one)
+        if workout_success and workout_id:
+            self.test_delete_workout(workout_id)
+
+        return self.get_summary()
+
+    def get_summary(self):
+        """Get test summary"""
+        print("\n" + "=" * 60)
+        print(f"📊 Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
+        
+        if self.tests_passed == self.tests_run:
+            print("🎉 All tests passed!")
+            return True
+        else:
+            print(f"⚠️  {self.tests_run - self.tests_passed} tests failed")
+            failed_tests = [result for result in self.test_results if result["status"] == "FAILED"]
+            for test in failed_tests:
+                print(f"   - {test['test']}: {test['details']}")
+            return False
+
+def main():
+    """Main test runner"""
+    tester = WorkoutTrackerAPITester()
+    success = tester.run_all_tests()
+    return 0 if success else 1
+
+if __name__ == "__main__":
+    sys.exit(main())
