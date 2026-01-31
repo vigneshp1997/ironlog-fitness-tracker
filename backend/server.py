@@ -364,8 +364,20 @@ async def delete_workout(workout_id: str):
 
 # Stats Routes
 @api_router.get("/stats", response_model=DashboardStats)
-async def get_stats():
-    workouts = await db.workouts.find({}, {"_id": 0}).to_list(10000)
+async def get_stats(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    query = {}
+    if start_date:
+        query["date"] = {"$gte": start_date}
+    if end_date:
+        if "date" in query:
+            query["date"]["$lte"] = end_date
+        else:
+            query["date"] = {"$lte": end_date}
+    
+    workouts = await db.workouts.find(query, {"_id": 0}).to_list(10000)
     
     total_workouts = len(workouts)
     total_exercises_logged = 0
