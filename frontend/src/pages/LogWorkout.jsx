@@ -40,167 +40,6 @@ const MUSCLE_GROUPS = [
   { value: "cardio", label: "Cardio" },
 ];
 
-function SetRow({ set, isCardio, onUpdate, onRemove, canRemove, entryIdx, setIdx }) {
-  return (
-    <div 
-      className="grid gap-2 items-center"
-      style={{
-        gridTemplateColumns: "60px 1fr 1fr auto"
-      }}
-      data-testid={`set-row-${entryIdx}-${setIdx}`}
-    >
-      <span className="text-sm font-semibold text-center bg-secondary rounded px-2 py-2">
-        {set.set_number}
-      </span>
-      {isCardio ? (
-        <>
-          <Input
-            type="number"
-            min="0"
-            step="0.1"
-            value={set.duration_minutes || ""}
-            onChange={(e) => onUpdate("duration_minutes", parseFloat(e.target.value) || 0)}
-            placeholder="0"
-            className="bg-secondary border-border"
-            data-testid={`duration-input-${entryIdx}-${setIdx}`}
-          />
-          <Input
-            type="number"
-            min="0"
-            step="0.1"
-            value={set.distance_km || ""}
-            onChange={(e) => onUpdate("distance_km", parseFloat(e.target.value) || 0)}
-            placeholder="0"
-            className="bg-secondary border-border"
-            data-testid={`distance-input-${entryIdx}-${setIdx}`}
-          />
-        </>
-      ) : (
-        <>
-          <Input
-            type="number"
-            min="0"
-            step="2.5"
-            value={set.weight || ""}
-            onChange={(e) => onUpdate("weight", parseFloat(e.target.value) || 0)}
-            placeholder="0"
-            className="bg-secondary border-border"
-            data-testid={`weight-input-${entryIdx}-${setIdx}`}
-          />
-          <Input
-            type="number"
-            min="0"
-            value={set.reps || ""}
-            onChange={(e) => onUpdate("reps", parseInt(e.target.value) || 0)}
-            placeholder="0"
-            className="bg-secondary border-border"
-            data-testid={`reps-input-${entryIdx}-${setIdx}`}
-          />
-        </>
-      )}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onRemove}
-        disabled={!canRemove}
-        className="text-muted-foreground hover:text-destructive"
-        data-testid={`remove-set-${entryIdx}-${setIdx}`}
-      >
-        <X className="w-4 h-4" />
-      </Button>
-    </div>
-  );
-}
-
-function ExerciseEntry({ entry, entryIndex, onRemove, onAddSet, onRemoveSet, onUpdateSet }) {
-  const isCardio = entry.category === "cardio";
-  
-  return (
-    <Card 
-      className="border-border/40 bg-card overflow-hidden"
-      data-testid={`exercise-entry-${entryIndex}`}
-    >
-      <CardHeader className="bg-secondary/50 border-b border-border/40">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-              isCardio ? "bg-primary/20" : "bg-accent/20"
-            }`}>
-              {isCardio ? (
-                <Timer className="w-5 h-5 text-primary" />
-              ) : (
-                <Dumbbell className="w-5 h-5 text-accent" />
-              )}
-            </div>
-            <div>
-              <CardTitle className="text-lg font-semibold">
-                {entry.exercise_name}
-              </CardTitle>
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                {entry.category}
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onRemove}
-            className="text-destructive hover:text-destructive hover:bg-destructive/20"
-            data-testid={`remove-exercise-${entryIndex}`}
-          >
-            <Trash2 className="w-5 h-5" />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="p-4">
-        <div className="grid gap-2 mb-2 text-xs uppercase tracking-widest text-muted-foreground" style={{
-          gridTemplateColumns: "60px 1fr 1fr auto"
-        }}>
-          <span>Set</span>
-          {isCardio ? (
-            <>
-              <span>Duration (min)</span>
-              <span>Distance (km)</span>
-            </>
-          ) : (
-            <>
-              <span>Weight (lbs)</span>
-              <span>Reps</span>
-            </>
-          )}
-          <span className="w-10"></span>
-        </div>
-
-        <div className="space-y-2">
-          {entry.sets.map((set, setIndex) => (
-            <SetRow
-              key={setIndex}
-              set={set}
-              isCardio={isCardio}
-              entryIdx={entryIndex}
-              setIdx={setIndex}
-              onUpdate={(field, value) => onUpdateSet(entryIndex, setIndex, field, value)}
-              onRemove={() => onRemoveSet(entryIndex, setIndex)}
-              canRemove={entry.sets.length > 1}
-            />
-          ))}
-        </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onAddSet(entryIndex)}
-          className="mt-3 w-full border-dashed"
-          data-testid={`add-set-${entryIndex}`}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Set
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
 export default function LogWorkout() {
   const navigate = useNavigate();
   const [date, setDate] = useState(new Date());
@@ -232,14 +71,30 @@ export default function LogWorkout() {
     return matchesSearch && matchesMuscle;
   });
 
+  const createNewSet = (category, setNumber, prevSet) => {
+    if (category === "cardio") {
+      return {
+        set_number: setNumber,
+        duration_minutes: prevSet ? prevSet.duration_minutes : 0,
+        distance_km: prevSet ? prevSet.distance_km : 0,
+        notes: ""
+      };
+    }
+    return {
+      set_number: setNumber,
+      reps: prevSet ? prevSet.reps : 0,
+      weight: prevSet ? prevSet.weight : 0,
+      notes: ""
+    };
+  };
+
   const addExercise = (exercise) => {
+    const firstSet = createNewSet(exercise.category, 1, null);
     const newEntry = {
       exercise_id: exercise.id,
       exercise_name: exercise.name,
       category: exercise.category,
-      sets: exercise.category === "cardio" 
-        ? [{ set_number: 1, duration_minutes: 0, distance_km: 0, notes: "" }]
-        : [{ set_number: 1, reps: 0, weight: 0, notes: "" }],
+      sets: [firstSet],
     };
     setEntries((prev) => [...prev, newEntry]);
     setShowExerciseModal(false);
@@ -253,36 +108,38 @@ export default function LogWorkout() {
 
   const addSet = (entryIndex) => {
     setEntries((prev) => {
-      const newEntries = [...prev];
-      const entry = newEntries[entryIndex];
+      const updated = [...prev];
+      const entry = updated[entryIndex];
       const lastSet = entry.sets[entry.sets.length - 1];
-      const newSet = {
-        set_number: entry.sets.length + 1,
-        ...(entry.category === "cardio"
-          ? { duration_minutes: lastSet?.duration_minutes || 0, distance_km: lastSet?.distance_km || 0 }
-          : { reps: lastSet?.reps || 0, weight: lastSet?.weight || 0 }),
-        notes: "",
+      const newSet = createNewSet(entry.category, entry.sets.length + 1, lastSet);
+      updated[entryIndex] = {
+        ...entry,
+        sets: [...entry.sets, newSet]
       };
-      entry.sets = [...entry.sets, newSet];
-      return newEntries;
+      return updated;
     });
   };
 
   const removeSet = (entryIndex, setIndex) => {
     setEntries((prev) => {
-      const newEntries = [...prev];
-      newEntries[entryIndex].sets = newEntries[entryIndex].sets
+      const updated = [...prev];
+      const entry = updated[entryIndex];
+      const newSets = entry.sets
         .filter((_, i) => i !== setIndex)
-        .map((set, i) => ({ ...set, set_number: i + 1 }));
-      return newEntries;
+        .map((s, i) => ({ ...s, set_number: i + 1 }));
+      updated[entryIndex] = { ...entry, sets: newSets };
+      return updated;
     });
   };
 
   const updateSet = (entryIndex, setIndex, field, value) => {
     setEntries((prev) => {
-      const newEntries = [...prev];
-      newEntries[entryIndex].sets[setIndex][field] = value;
-      return newEntries;
+      const updated = [...prev];
+      const entry = updated[entryIndex];
+      const newSets = [...entry.sets];
+      newSets[setIndex] = { ...newSets[setIndex], [field]: value };
+      updated[entryIndex] = { ...entry, sets: newSets };
+      return updated;
     });
   };
 
@@ -307,6 +164,61 @@ export default function LogWorkout() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const renderSetInputs = (entry, entryIndex, set, setIndex) => {
+    const isCardio = entry.category === "cardio";
+    
+    if (isCardio) {
+      return (
+        <>
+          <Input
+            type="number"
+            min="0"
+            step="0.1"
+            value={set.duration_minutes || ""}
+            onChange={(e) => updateSet(entryIndex, setIndex, "duration_minutes", parseFloat(e.target.value) || 0)}
+            placeholder="0"
+            className="bg-secondary border-border"
+            data-testid={`duration-input-${entryIndex}-${setIndex}`}
+          />
+          <Input
+            type="number"
+            min="0"
+            step="0.1"
+            value={set.distance_km || ""}
+            onChange={(e) => updateSet(entryIndex, setIndex, "distance_km", parseFloat(e.target.value) || 0)}
+            placeholder="0"
+            className="bg-secondary border-border"
+            data-testid={`distance-input-${entryIndex}-${setIndex}`}
+          />
+        </>
+      );
+    }
+    
+    return (
+      <>
+        <Input
+          type="number"
+          min="0"
+          step="2.5"
+          value={set.weight || ""}
+          onChange={(e) => updateSet(entryIndex, setIndex, "weight", parseFloat(e.target.value) || 0)}
+          placeholder="0"
+          className="bg-secondary border-border"
+          data-testid={`weight-input-${entryIndex}-${setIndex}`}
+        />
+        <Input
+          type="number"
+          min="0"
+          value={set.reps || ""}
+          onChange={(e) => updateSet(entryIndex, setIndex, "reps", parseInt(e.target.value) || 0)}
+          placeholder="0"
+          className="bg-secondary border-border"
+          data-testid={`reps-input-${entryIndex}-${setIndex}`}
+        />
+      </>
+    );
   };
 
   return (
@@ -410,17 +322,95 @@ export default function LogWorkout() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {entries.map((entry, entryIndex) => (
-              <ExerciseEntry
-                key={entryIndex}
-                entry={entry}
-                entryIndex={entryIndex}
-                onRemove={() => removeExercise(entryIndex)}
-                onAddSet={addSet}
-                onRemoveSet={removeSet}
-                onUpdateSet={updateSet}
-              />
-            ))}
+            {entries.map((entry, entryIndex) => {
+              const isCardio = entry.category === "cardio";
+              return (
+                <Card 
+                  key={entryIndex}
+                  className="border-border/40 bg-card overflow-hidden"
+                  data-testid={`exercise-entry-${entryIndex}`}
+                >
+                  <CardHeader className="bg-secondary/50 border-b border-border/40">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          isCardio ? "bg-primary/20" : "bg-accent/20"
+                        }`}>
+                          {isCardio ? (
+                            <Timer className="w-5 h-5 text-primary" />
+                          ) : (
+                            <Dumbbell className="w-5 h-5 text-accent" />
+                          )}
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg font-semibold">
+                            {entry.exercise_name}
+                          </CardTitle>
+                          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                            {entry.category}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeExercise(entryIndex)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/20"
+                        data-testid={`remove-exercise-${entryIndex}`}
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {/* Sets Header */}
+                    <div className="grid grid-cols-4 gap-2 mb-2 text-xs uppercase tracking-widest text-muted-foreground">
+                      <span>Set</span>
+                      <span>{isCardio ? "Duration (min)" : "Weight (lbs)"}</span>
+                      <span>{isCardio ? "Distance (km)" : "Reps"}</span>
+                      <span className="w-10"></span>
+                    </div>
+
+                    {/* Sets */}
+                    <div className="space-y-2">
+                      {entry.sets.map((set, setIndex) => (
+                        <div 
+                          key={setIndex}
+                          className="grid grid-cols-4 gap-2 items-center"
+                          data-testid={`set-row-${entryIndex}-${setIndex}`}
+                        >
+                          <span className="text-sm font-semibold text-center bg-secondary rounded px-2 py-2">
+                            {set.set_number}
+                          </span>
+                          {renderSetInputs(entry, entryIndex, set, setIndex)}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeSet(entryIndex, setIndex)}
+                            disabled={entry.sets.length === 1}
+                            className="text-muted-foreground hover:text-destructive"
+                            data-testid={`remove-set-${entryIndex}-${setIndex}`}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addSet(entryIndex)}
+                      className="mt-3 w-full border-dashed"
+                      data-testid={`add-set-${entryIndex}`}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Set
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
@@ -482,33 +472,36 @@ export default function LogWorkout() {
             {/* Exercise List */}
             <ScrollArea className="h-[400px] pr-4">
               <div className="space-y-2">
-                {filteredExercises.map((exercise) => (
-                  <button
-                    key={exercise.id}
-                    onClick={() => addExercise(exercise)}
-                    className="w-full p-4 rounded-lg bg-secondary hover:bg-secondary/80 border border-transparent hover:border-primary/50 transition-all duration-200 text-left flex items-center justify-between group"
-                    data-testid={`exercise-option-${exercise.id}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        exercise.category === "cardio" ? "bg-primary/20" : "bg-accent/20"
-                      }`}>
-                        {exercise.category === "cardio" ? (
-                          <Timer className="w-5 h-5 text-primary" />
-                        ) : (
-                          <Dumbbell className="w-5 h-5 text-accent" />
-                        )}
+                {filteredExercises.map((exercise) => {
+                  const isCardioExercise = exercise.category === "cardio";
+                  return (
+                    <button
+                      key={exercise.id}
+                      onClick={() => addExercise(exercise)}
+                      className="w-full p-4 rounded-lg bg-secondary hover:bg-secondary/80 border border-transparent hover:border-primary/50 transition-all duration-200 text-left flex items-center justify-between group"
+                      data-testid={`exercise-option-${exercise.id}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          isCardioExercise ? "bg-primary/20" : "bg-accent/20"
+                        }`}>
+                          {isCardioExercise ? (
+                            <Timer className="w-5 h-5 text-primary" />
+                          ) : (
+                            <Dumbbell className="w-5 h-5 text-accent" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold">{exercise.name}</p>
+                          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                            {exercise.muscle_group.replace("_", " ")}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold">{exercise.name}</p>
-                        <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                          {exercise.muscle_group.replace("_", " ")}
-                        </p>
-                      </div>
-                    </div>
-                    <Check className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </button>
-                ))}
+                      <Check className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  );
+                })}
                 {filteredExercises.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <p>No exercises found</p>
