@@ -287,7 +287,7 @@ export default function History() {
                                 ) : (
                                   <>
                                     {set.weight > 0 && (
-                                      <span className="font-semibold">{set.weight} lbs</span>
+                                      <span className="font-semibold">{set.weight} kg</span>
                                     )}
                                     {set.reps > 0 && (
                                       <span>× {set.reps} reps</span>
