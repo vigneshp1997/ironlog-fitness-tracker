@@ -6,7 +6,8 @@ import {
   TrendingUp, 
   History,
   Menu,
-  X
+  X,
+  FolderOpen
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 const navItems = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/log", icon: Dumbbell, label: "Log Workout" },
+  { path: "/templates", icon: FolderOpen, label: "Templates" },
   { path: "/exercises", icon: Library, label: "Exercises" },
   { path: "/progress", icon: TrendingUp, label: "Progress" },
   { path: "/history", icon: History, label: "History" },
