@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Plus, Trash2, Save, Dumbbell, Timer, Search, X, Check } from "lucide-react";
+import { Plus, Trash2, Save, Dumbbell, Timer, Search, X, Check, FolderOpen } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -132,21 +132,27 @@ export default function LogWorkout() {
   const [entries, setEntries] = useState([]);
   const [notes, setNotes] = useState("");
   const [exercises, setExercises] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const [showExerciseModal, setShowExerciseModal] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [muscleFilter, setMuscleFilter] = useState("all");
   const [saving, setSaving] = useState(false);
 
-  const fetchExercises = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const res = await axios.get(`${API}/exercises`);
-      setExercises(res.data);
+      const [exercisesRes, templatesRes] = await Promise.all([
+        axios.get(`${API}/exercises`),
+        axios.get(`${API}/templates`)
+      ]);
+      setExercises(exercisesRes.data);
+      setTemplates(templatesRes.data);
     } catch (err) {
-      toast.error("Failed to load exercises");
+      toast.error("Failed to load data");
     }
   }, []);
 
-  useEffect(() => { fetchExercises(); }, [fetchExercises]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const getFilteredExercises = () => {
     const result = [];
@@ -166,6 +172,27 @@ export default function LogWorkout() {
     setShowExerciseModal(false);
     setSearchQuery("");
     setMuscleFilter("all");
+  };
+
+  const loadTemplate = (template) => {
+    const newEntries = [];
+    for (let i = 0; i < template.exercises.length; i++) {
+      const ex = template.exercises[i];
+      const isCardio = ex.category === "cardio";
+      const sets = [];
+      const numSets = ex.default_sets || 3;
+      for (let j = 0; j < numSets; j++) {
+        if (isCardio) {
+          sets.push({ set_number: j + 1, duration_minutes: 0, distance_km: 0 });
+        } else {
+          sets.push({ set_number: j + 1, reps: 0, weight: 0 });
+        }
+      }
+      newEntries.push({ exercise_id: ex.exercise_id, exercise_name: ex.exercise_name, category: ex.category, sets });
+    }
+    setEntries(newEntries);
+    setShowTemplateModal(false);
+    toast.success(`Loaded "${template.name}" template`);
   };
 
   const removeExercise = (idx) => {
@@ -263,20 +290,35 @@ export default function LogWorkout() {
       </Card>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h2 className="font-display text-2xl font-bold tracking-tight">EXERCISES</h2>
-          <Button onClick={() => setShowExerciseModal(true)} className="bg-primary hover:bg-primary/90 rounded-full" data-testid="add-exercise-btn">
-            <Plus className="w-5 h-5 mr-2" />Add Exercise
-          </Button>
+          <div className="flex gap-2">
+            {templates.length > 0 && (
+              <Button onClick={() => setShowTemplateModal(true)} variant="outline" className="rounded-full" data-testid="load-template-btn">
+                <FolderOpen className="w-5 h-5 mr-2" />Load Template
+              </Button>
+            )}
+            <Button onClick={() => setShowExerciseModal(true)} className="bg-primary hover:bg-primary/90 rounded-full" data-testid="add-exercise-btn">
+              <Plus className="w-5 h-5 mr-2" />Add Exercise
+            </Button>
+          </div>
         </div>
         {entries.length === 0 ? (
           <Card className="border-border/40 bg-card border-dashed">
             <CardContent className="p-12 text-center">
               <Dumbbell className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
               <p className="text-lg font-medium text-muted-foreground">No exercises added</p>
-              <Button onClick={() => setShowExerciseModal(true)} variant="outline" className="mt-4" data-testid="add-first-exercise-btn">
-                <Plus className="w-4 h-4 mr-2" />Add Your First Exercise
-              </Button>
+              <p className="text-sm text-muted-foreground mb-4">Add exercises or load a template</p>
+              <div className="flex justify-center gap-2">
+                {templates.length > 0 && (
+                  <Button onClick={() => setShowTemplateModal(true)} variant="outline" data-testid="load-template-empty-btn">
+                    <FolderOpen className="w-4 h-4 mr-2" />Load Template
+                  </Button>
+                )}
+                <Button onClick={() => setShowExerciseModal(true)} variant="outline" data-testid="add-first-exercise-btn">
+                  <Plus className="w-4 h-4 mr-2" />Add Exercise
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : <div className="space-y-4">{entryCards}</div>}
@@ -289,6 +331,7 @@ export default function LogWorkout() {
         </CardContent>
       </Card>
 
+      {/* Exercise Selection Modal */}
       <Dialog open={showExerciseModal} onOpenChange={setShowExerciseModal}>
         <DialogContent className="bg-card border-border max-w-2xl max-h-[80vh]">
           <DialogHeader><DialogTitle className="font-display text-2xl tracking-tight">SELECT EXERCISE</DialogTitle></DialogHeader>
@@ -312,6 +355,36 @@ export default function LogWorkout() {
               </div>
             </ScrollArea>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Template Selection Modal */}
+      <Dialog open={showTemplateModal} onOpenChange={setShowTemplateModal}>
+        <DialogContent className="bg-card border-border max-w-lg">
+          <DialogHeader><DialogTitle className="font-display text-2xl tracking-tight">LOAD TEMPLATE</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Select a template to pre-fill your workout</p>
+          <ScrollArea className="h-[300px] pr-4 mt-4">
+            <div className="space-y-2">
+              {templates.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => loadTemplate(t)}
+                  className="w-full p-4 rounded-lg bg-secondary hover:bg-secondary/80 border border-transparent hover:border-primary/50 transition-all duration-200 text-left"
+                  data-testid={`template-option-${t.id}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                      <FolderOpen className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">{t.name}</p>
+                      <p className="text-xs text-muted-foreground">{t.exercises.length} exercises</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
