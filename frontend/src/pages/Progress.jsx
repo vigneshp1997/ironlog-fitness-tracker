@@ -69,11 +69,25 @@ export default function Progress() {
     fetchExercises();
   }, []);
 
+  const fetchProgress = useCallback(async () => {
+    if (!selectedExercise) return;
+    
+    setLoadingProgress(true);
+    try {
+      const res = await axios.get(`${API}/progress/${selectedExercise.id}?days=${timeRange}`);
+      setProgressData(res.data);
+    } catch (error) {
+      console.error("Error fetching progress:", error);
+    } finally {
+      setLoadingProgress(false);
+    }
+  }, [selectedExercise, timeRange]);
+
   useEffect(() => {
     if (selectedExercise) {
       fetchProgress();
     }
-  }, [selectedExercise, timeRange]);
+  }, [selectedExercise, timeRange, fetchProgress]);
 
   const fetchExercises = async () => {
     try {
