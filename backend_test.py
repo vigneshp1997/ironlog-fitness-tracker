@@ -151,7 +151,7 @@ class WorkoutTrackerAPITester:
                             {
                                 "set_number": 1,
                                 "reps": 10 if exercise["category"] == "strength" else None,
-                                "weight": 135.0 if exercise["category"] == "strength" else None,
+                                "weight": 80.0 if exercise["category"] == "strength" else None,  # Using kg
                                 "duration_minutes": 30.0 if exercise["category"] == "cardio" else None,
                                 "distance_km": 5.0 if exercise["category"] == "cardio" else None
                             }
