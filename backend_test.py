@@ -340,6 +340,212 @@ class WorkoutTrackerAPITester:
             self.log_test("Delete Workout", False, str(e))
             return False
 
+    def test_get_templates(self):
+        """Test getting all templates"""
+        try:
+            response = requests.get(f"{self.api_url}/templates", timeout=10)
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                templates = response.json()
+                details += f", Found {len(templates)} templates"
+                
+                # Check template structure if any exist
+                if templates and isinstance(templates[0], dict):
+                    required_fields = ['id', 'name', 'exercises', 'created_at']
+                    first_template = templates[0]
+                    missing_fields = [field for field in required_fields if field not in first_template]
+                    if missing_fields:
+                        success = False
+                        details += f", Missing fields: {missing_fields}"
+                    else:
+                        details += ", Template structure valid"
+
+            self.log_test("Get Templates", success, details)
+            return success, templates if success else []
+        except Exception as e:
+            self.log_test("Get Templates", False, str(e))
+            return False, []
+
+    def test_create_template(self):
+        """Test creating a template"""
+        try:
+            # First get some exercises to use
+            exercises_response = requests.get(f"{self.api_url}/exercises?limit=3", timeout=10)
+            if exercises_response.status_code != 200:
+                self.log_test("Create Template", False, "Failed to get exercises for test")
+                return False, None
+
+            exercises = exercises_response.json()
+            if len(exercises) < 2:
+                self.log_test("Create Template", False, "Not enough exercises available for test")
+                return False, None
+
+            # Create test template data
+            template_data = {
+                "name": f"Test Template {datetime.now().strftime('%H%M%S')}",
+                "description": "Test template created by API testing",
+                "exercises": [
+                    {
+                        "exercise_id": exercises[0]["id"],
+                        "exercise_name": exercises[0]["name"],
+                        "category": exercises[0]["category"],
+                        "default_sets": 3
+                    },
+                    {
+                        "exercise_id": exercises[1]["id"],
+                        "exercise_name": exercises[1]["name"],
+                        "category": exercises[1]["category"],
+                        "default_sets": 4
+                    }
+                ]
+            }
+
+            response = requests.post(
+                f"{self.api_url}/templates",
+                json=template_data,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            template_id = None
+            if success:
+                created_template = response.json()
+                template_id = created_template.get("id")
+                details += f", Created template ID: {template_id}"
+                
+                # Verify template structure
+                required_fields = ['id', 'name', 'exercises', 'created_at']
+                missing_fields = [field for field in required_fields if field not in created_template]
+                if missing_fields:
+                    success = False
+                    details += f", Missing fields: {missing_fields}"
+                else:
+                    details += f", Template '{created_template['name']}' with {len(created_template['exercises'])} exercises"
+            else:
+                try:
+                    error_data = response.json()
+                    details += f", Error: {error_data}"
+                except:
+                    details += f", Response: {response.text[:200]}"
+
+            self.log_test("Create Template", success, details)
+            return success, template_id
+        except Exception as e:
+            self.log_test("Create Template", False, str(e))
+            return False, None
+
+    def test_get_template(self, template_id):
+        """Test getting a specific template"""
+        if not template_id:
+            self.log_test("Get Template", False, "No template ID provided")
+            return False
+
+        try:
+            response = requests.get(f"{self.api_url}/templates/{template_id}", timeout=10)
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                template = response.json()
+                details += f", Retrieved template '{template.get('name')}' with {len(template.get('exercises', []))} exercises"
+                
+                # Verify template structure
+                required_fields = ['id', 'name', 'exercises', 'created_at']
+                missing_fields = [field for field in required_fields if field not in template]
+                if missing_fields:
+                    success = False
+                    details += f", Missing fields: {missing_fields}"
+            else:
+                try:
+                    error_data = response.json()
+                    details += f", Error: {error_data}"
+                except:
+                    details += f", Response: {response.text[:200]}"
+
+            self.log_test("Get Template", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Get Template", False, str(e))
+            return False
+
+    def test_update_template(self, template_id):
+        """Test updating a template"""
+        if not template_id:
+            self.log_test("Update Template", False, "No template ID provided")
+            return False
+
+        try:
+            # Update template data
+            update_data = {
+                "name": f"Updated Test Template {datetime.now().strftime('%H%M%S')}",
+                "description": "Updated description from API testing"
+            }
+
+            response = requests.put(
+                f"{self.api_url}/templates/{template_id}",
+                json=update_data,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                updated_template = response.json()
+                details += f", Updated template '{updated_template.get('name')}'"
+                
+                # Verify the update was applied
+                if updated_template.get('name') == update_data['name']:
+                    details += " (✓ Name updated correctly)"
+                else:
+                    success = False
+                    details += " (✗ Name not updated)"
+            else:
+                try:
+                    error_data = response.json()
+                    details += f", Error: {error_data}"
+                except:
+                    details += f", Response: {response.text[:200]}"
+
+            self.log_test("Update Template", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Update Template", False, str(e))
+            return False
+
+    def test_delete_template(self, template_id):
+        """Test deleting a template"""
+        if not template_id:
+            self.log_test("Delete Template", False, "No template ID provided")
+            return False
+
+        try:
+            response = requests.delete(f"{self.api_url}/templates/{template_id}", timeout=10)
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            if success:
+                result = response.json()
+                details += f", Response: {result}"
+            else:
+                try:
+                    error_data = response.json()
+                    details += f", Error: {error_data}"
+                except:
+                    details += f", Response: {response.text[:200]}"
+
+            self.log_test("Delete Template", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Delete Template", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all API tests"""
         print("🏋️ Starting Workout Tracker API Tests...")
