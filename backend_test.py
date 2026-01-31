@@ -581,7 +581,27 @@ class WorkoutTrackerAPITester:
         # Test 8: Get progress
         self.test_get_progress()
 
-        # Test 9: Delete workout (if we created one)
+        # Test 9: Template CRUD operations
+        print("\n🗂️ Testing Template Features...")
+        
+        # Get existing templates
+        templates_success, existing_templates = self.test_get_templates()
+        
+        # Create new template
+        template_success, template_id = self.test_create_template()
+        
+        # Test template operations if creation succeeded
+        if template_success and template_id:
+            # Get specific template
+            self.test_get_template(template_id)
+            
+            # Update template
+            self.test_update_template(template_id)
+            
+            # Delete template
+            self.test_delete_template(template_id)
+
+        # Test 10: Delete workout (if we created one)
         if workout_success and workout_id:
             self.test_delete_workout(workout_id)
 
