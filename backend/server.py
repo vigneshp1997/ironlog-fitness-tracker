@@ -99,6 +99,31 @@ class ProgressData(BaseModel):
     duration: Optional[float] = None
     distance: Optional[float] = None
 
+# Template Models
+class TemplateExercise(BaseModel):
+    exercise_id: str
+    exercise_name: str
+    category: ExerciseCategory
+    default_sets: int = 3
+
+class WorkoutTemplate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: Optional[str] = None
+    exercises: List[TemplateExercise]
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class WorkoutTemplateCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    exercises: List[TemplateExercise]
+
+class WorkoutTemplateUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    exercises: Optional[List[TemplateExercise]] = None
+
 # Pre-populated exercises data
 INITIAL_EXERCISES = [
     # Chest
