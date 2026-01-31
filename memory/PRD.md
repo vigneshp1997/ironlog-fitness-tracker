@@ -30,6 +30,10 @@ Build a daily weight tracker web app to track sets and reps across exercises in 
 - ✅ Progress page with line/bar charts
 - ✅ History page with expandable workout details and delete functionality
 - ✅ Dark theme with Barlow Condensed + Inter fonts
+- ✅ **Workout Templates** - Create reusable routines (Push Day, Leg Day, etc.)
+  - Create/edit/delete templates
+  - Add exercises from catalog to templates
+  - Load templates when logging workouts to pre-fill exercises
 
 ## API Endpoints
 - GET /api/exercises - List exercises with optional filtering
@@ -39,6 +43,10 @@ Build a daily weight tracker web app to track sets and reps across exercises in 
 - DELETE /api/workouts/{id} - Delete workout
 - GET /api/stats - Get dashboard statistics
 - GET /api/progress/{exercise_id} - Get progress data for charts
+- GET /api/templates - List all workout templates
+- POST /api/templates - Create new template
+- PUT /api/templates/{id} - Update template
+- DELETE /api/templates/{id} - Delete template
 
 ## Prioritized Backlog
 ### P0 (Critical) - DONE
