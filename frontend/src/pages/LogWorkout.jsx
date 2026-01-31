@@ -116,7 +116,7 @@ function ExerciseCard({ entry, index, onRemove, onUpdateSet, onRemoveSet, onAddS
       <CardContent className="p-4">
         <div className="grid grid-cols-4 gap-2 mb-2 text-xs uppercase tracking-widest text-muted-foreground">
           <span>Set</span>
-          <span>{isCardio ? "Duration (min)" : "Weight (lbs)"}</span>
+          <span>{isCardio ? "Duration (min)" : "Weight (kg)"}</span>
           <span>{isCardio ? "Distance (km)" : "Reps"}</span>
           <span></span>
         </div>
