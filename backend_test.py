@@ -261,7 +261,269 @@ class WorkoutTrackerAPITester:
             self.log_test("Get Dashboard Stats", False, str(e))
             return False
 
-    def test_get_recent_workouts(self):
+    def test_create_custom_exercise(self):
+        """Test creating a custom exercise"""
+        try:
+            # Create test exercise data
+            exercise_data = {
+                "name": f"Test Custom Exercise {datetime.now().strftime('%H%M%S')}",
+                "category": "strength",
+                "muscle_group": "chest",
+                "description": "Test exercise created by API testing"
+            }
+
+            response = requests.post(
+                f"{self.api_url}/exercises",
+                json=exercise_data,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            success = response.status_code == 200
+            details = f"Status: {response.status_code}"
+            
+            exercise_id = None
+            if success:
+                created_exercise = response.json()
+                exercise_id = created_exercise.get("id")
+                details += f", Created exercise ID: {exercise_id}"
+                
+                # Verify exercise structure
+                required_fields = ['id', 'name', 'category', 'muscle_group']
+                missing_fields = [field for field in required_fields if field not in created_exercise]
+                if missing_fields:
+                    success = False
+                    details += f", Missing fields: {missing_fields}"
+                else:
+                    details += f", Exercise '{created_exercise['name']}' ({created_exercise['category']}/{created_exercise['muscle_group']})"
+                    
+                    # Verify the data matches what we sent
+                    if (created_exercise['name'] == exercise_data['name'] and 
+                        created_exercise['category'] == exercise_data['category'] and
+                        created_exercise['muscle_group'] == exercise_data['muscle_group']):
+                        details += " (✓ Data matches)"
+                    else:
+                        success = False
+                        details += " (✗ Data mismatch)"
+            else:
+                try:
+                    error_data = response.json()
+                    details += f", Error: {error_data}"
+                except:
+                    details += f", Response: {response.text[:200]}"
+
+            self.log_test("Create Custom Exercise", success, details)
+            return success, exercise_id
+        except Exception as e:
+            self.log_test("Create Custom Exercise", False, str(e))
+            return False, None
+
+    def test_weight_units_kg(self):
+        """Test that weight values are in kg throughout the system"""
+        try:
+            # Create a strength workout with weight in kg
+            exercises_response = requests.get(f"{self.api_url}/exercises?category=strength&limit=1", timeout=10)
+            if exercises_response.status_code != 200:
+                self.log_test("Weight Units (kg)", False, "Failed to get strength exercises")
+                return False
+
+            exercises = exercises_response.json()
+            if not exercises:
+                self.log_test("Weight Units (kg)", False, "No strength exercises available")
+                return False
+
+            exercise = exercises[0]
+            
+            # Create workout with weight in kg
+            workout_data = {
+                "date": datetime.now().strftime("%Y-%m-%d"),
+                "entries": [
+                    {
+                        "exercise_id": exercise["id"],
+                        "exercise_name": exercise["name"],
+                        "category": exercise["category"],
+                        "sets": [
+                            {
+                                "set_number": 1,
+                                "reps": 10,
+                                "weight": 100.0  # 100 kg
+                            }
+                        ]
+                    }
+                ],
+                "notes": "Test workout for kg verification"
+            }
+
+            # Create the workout
+            create_response = requests.post(
+                f"{self.api_url}/workouts",
+                json=workout_data,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if create_response.status_code != 200:
+                self.log_test("Weight Units (kg)", False, "Failed to create test workout")
+                return False
+
+            created_workout = create_response.json()
+            workout_id = created_workout.get("id")
+
+            # Check stats to see if volume is calculated correctly (should be 100kg * 10 reps = 1000)
+            stats_response = requests.get(f"{self.api_url}/stats", timeout=10)
+            success = stats_response.status_code == 200
+            details = f"Workout created with 100kg weight"
+            
+            if success:
+                stats = stats_response.json()
+                total_volume = stats.get('total_volume', 0)
+                details += f", Total volume in stats: {total_volume} kg"
+                
+                # The volume should include our 1000 kg (100kg * 10 reps)
+                if total_volume >= 1000:
+                    details += " (✓ Weight calculations in kg)"
+                else:
+                    success = False
+                    details += " (✗ Weight calculations may not be in kg)"
+
+            # Clean up - delete the test workout
+            if workout_id:
+                requests.delete(f"{self.api_url}/workouts/{workout_id}", timeout=10)
+
+            self.log_test("Weight Units (kg)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Weight Units (kg)", False, str(e))
+            return False
+
+    def test_calorie_calculation(self):
+        """Test calorie calculation for both strength and cardio exercises"""
+        try:
+            success = True
+            details = ""
+            
+            # Test strength exercise calorie calculation
+            strength_exercises = requests.get(f"{self.api_url}/exercises?category=strength&limit=1", timeout=10)
+            if strength_exercises.status_code == 200:
+                exercises = strength_exercises.json()
+                if exercises:
+                    exercise = exercises[0]
+                    
+                    # Create strength workout
+                    workout_data = {
+                        "date": datetime.now().strftime("%Y-%m-%d"),
+                        "entries": [
+                            {
+                                "exercise_id": exercise["id"],
+                                "exercise_name": exercise["name"],
+                                "category": "strength",
+                                "sets": [
+                                    {
+                                        "set_number": 1,
+                                        "reps": 10,
+                                        "weight": 50.0  # 50 kg
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                    
+                    create_response = requests.post(
+                        f"{self.api_url}/workouts",
+                        json=workout_data,
+                        headers={"Content-Type": "application/json"},
+                        timeout=10
+                    )
+                    
+                    if create_response.status_code == 200:
+                        workout = create_response.json()
+                        workout_id = workout.get("id")
+                        details += "Strength workout created (50kg × 10 reps)"
+                        
+                        # Check if calories are calculated in stats
+                        stats_response = requests.get(f"{self.api_url}/stats", timeout=10)
+                        if stats_response.status_code == 200:
+                            stats = stats_response.json()
+                            calories = stats.get('total_calories', 0)
+                            details += f", Total calories: {calories}"
+                            
+                            # Expected: 50kg * 10 reps * 0.05 * 1.3 = 32.5 calories (approximately)
+                            if calories > 0:
+                                details += " (✓ Strength calories calculated)"
+                            else:
+                                success = False
+                                details += " (✗ No strength calories calculated)"
+                        
+                        # Clean up
+                        if workout_id:
+                            requests.delete(f"{self.api_url}/workouts/{workout_id}", timeout=10)
+                    else:
+                        success = False
+                        details += "Failed to create strength workout"
+            
+            # Test cardio exercise calorie calculation
+            cardio_exercises = requests.get(f"{self.api_url}/exercises?category=cardio&limit=1", timeout=10)
+            if cardio_exercises.status_code == 200:
+                exercises = cardio_exercises.json()
+                if exercises:
+                    exercise = exercises[0]
+                    
+                    # Create cardio workout
+                    workout_data = {
+                        "date": datetime.now().strftime("%Y-%m-%d"),
+                        "entries": [
+                            {
+                                "exercise_id": exercise["id"],
+                                "exercise_name": exercise["name"],
+                                "category": "cardio",
+                                "sets": [
+                                    {
+                                        "set_number": 1,
+                                        "duration_minutes": 30.0  # 30 minutes
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                    
+                    create_response = requests.post(
+                        f"{self.api_url}/workouts",
+                        json=workout_data,
+                        headers={"Content-Type": "application/json"},
+                        timeout=10
+                    )
+                    
+                    if create_response.status_code == 200:
+                        workout = create_response.json()
+                        workout_id = workout.get("id")
+                        details += ", Cardio workout created (30 min)"
+                        
+                        # Check if calories are calculated in stats
+                        stats_response = requests.get(f"{self.api_url}/stats", timeout=10)
+                        if stats_response.status_code == 200:
+                            stats = stats_response.json()
+                            calories = stats.get('total_calories', 0)
+                            details += f", Updated total calories: {calories}"
+                            
+                            # Expected: 7 MET * 70kg * 0.5 hours = 245 calories (approximately)
+                            if calories > 200:  # Should be significantly higher with cardio
+                                details += " (✓ Cardio calories calculated)"
+                            else:
+                                success = False
+                                details += " (✗ Cardio calories may not be calculated)"
+                        
+                        # Clean up
+                        if workout_id:
+                            requests.delete(f"{self.api_url}/workouts/{workout_id}", timeout=10)
+                    else:
+                        success = False
+                        details += ", Failed to create cardio workout"
+
+            self.log_test("Calorie Calculation", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Calorie Calculation", False, str(e))
+            return False
         """Test getting recent workouts"""
         try:
             response = requests.get(f"{self.api_url}/recent-workouts", timeout=10)
