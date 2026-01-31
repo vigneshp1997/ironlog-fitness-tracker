@@ -34,6 +34,12 @@ Build a daily weight tracker web app to track sets and reps across exercises in 
   - Create/edit/delete templates
   - Add exercises from catalog to templates
   - Load templates when logging workouts to pre-fill exercises
+- ✅ **Custom Exercises** - Add your own exercises to the library
+  - Name, category (strength/cardio), muscle group, description
+- ✅ **Weight in Kilograms** - All weights tracked in kg throughout the app
+- ✅ **Calories Burned Tracking** - Automatic estimation based on:
+  - Strength: weight × reps × 0.065 (metabolic cost formula)
+  - Cardio: MET × bodyweight × duration (using moderate intensity MET=7)
 
 ## API Endpoints
 - GET /api/exercises - List exercises with optional filtering
