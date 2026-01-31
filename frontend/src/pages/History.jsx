@@ -212,7 +212,7 @@ export default function History() {
                           <span>{workout.entries?.length || 0} exercises</span>
                           <span>{stats.totalSets} sets</span>
                           {stats.totalVolume > 0 && (
-                            <span>{stats.totalVolume.toLocaleString()} lbs volume</span>
+                            <span>{stats.totalVolume.toLocaleString()} kg volume</span>
                           )}
                         </div>
                       </div>
