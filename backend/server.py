@@ -511,6 +511,70 @@ async def get_progress(exercise_id: str, days: int = Query(default=30, le=365)):
     
     return sorted(progress_by_date.values(), key=lambda x: x["date"])
 
+# Daily trends for dashboard charts
+class DailyTrend(BaseModel):
+    date: str
+    workouts: int
+    sets: int
+    volume: float
+    calories: float
+
+@api_router.get("/trends", response_model=List[DailyTrend])
+async def get_trends(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    days: int = Query(default=30, le=365)
+):
+    # If no dates provided, use last N days
+    if not start_date:
+        start_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+    if not end_date:
+        end_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    workouts = await db.workouts.find(
+        {"date": {"$gte": start_date, "$lte": end_date}},
+        {"_id": 0}
+    ).to_list(10000)
+    
+    # Group by date
+    trends_by_date = {}
+    
+    for workout in workouts:
+        date = workout.get("date", "")[:10]
+        if date not in trends_by_date:
+            trends_by_date[date] = {
+                "date": date,
+                "workouts": 0,
+                "sets": 0,
+                "volume": 0.0,
+                "calories": 0.0
+            }
+        
+        trends_by_date[date]["workouts"] += 1
+        
+        for entry in workout.get("entries", []):
+            entry_category = entry.get("category", "strength")
+            for set_data in entry.get("sets", []):
+                trends_by_date[date]["sets"] += 1
+                
+                if entry_category == "cardio":
+                    duration = set_data.get("duration_minutes", 0) or 0
+                    if duration > 0:
+                        trends_by_date[date]["calories"] += calculate_cardio_calories(duration)
+                else:
+                    weight = set_data.get("weight", 0) or 0
+                    reps = set_data.get("reps", 0) or 0
+                    if weight > 0 and reps > 0:
+                        trends_by_date[date]["volume"] += weight * reps
+                        trends_by_date[date]["calories"] += calculate_strength_calories(weight, reps)
+    
+    # Round values
+    for date in trends_by_date:
+        trends_by_date[date]["volume"] = round(trends_by_date[date]["volume"], 1)
+        trends_by_date[date]["calories"] = round(trends_by_date[date]["calories"], 1)
+    
+    return sorted(trends_by_date.values(), key=lambda x: x["date"])
+
 # Recent workouts for dashboard
 @api_router.get("/recent-workouts", response_model=List[WorkoutLog])
 async def get_recent_workouts():
