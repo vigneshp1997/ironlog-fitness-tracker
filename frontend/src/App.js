@@ -7,6 +7,7 @@ import LogWorkout from "@/pages/LogWorkout";
 import ExerciseLibrary from "@/pages/ExerciseLibrary";
 import Progress from "@/pages/Progress";
 import History from "@/pages/History";
+import Templates from "@/pages/Templates";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/log" element={<LogWorkout />} />
+            <Route path="/templates" element={<Templates />} />
             <Route path="/exercises" element={<ExerciseLibrary />} />
             <Route path="/progress" element={<Progress />} />
             <Route path="/history" element={<History />} />
