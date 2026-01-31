@@ -950,6 +950,12 @@ class WorkoutTrackerAPITester:
         # Test 6: Get stats
         self.test_get_stats()
 
+        # Test 6a: Test stats date filtering
+        self.test_stats_date_filtering()
+
+        # Test 6b: Test trends endpoint
+        self.test_trends_endpoint()
+
         # Test 7: Get recent workouts
         self.test_get_recent_workouts()
 
