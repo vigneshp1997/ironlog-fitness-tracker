@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { 
   TrendingUp, 
@@ -39,7 +39,7 @@ const CustomTooltip = ({ active, payload, label }) => {
     return (
       <div className="custom-tooltip">
         <p className="text-sm font-semibold mb-1">
-          {format(parseISO(label), "MMM d, yyyy")}
+          {label ? format(parseISO(label), "MMM d, yyyy") : ""}
         </p>
         {payload.map((entry, index) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
@@ -65,35 +65,10 @@ export default function Progress() {
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(false);
 
-  useEffect(() => {
-    fetchExercises();
-  }, []);
-
-  const fetchProgress = useCallback(async () => {
-    if (!selectedExercise) return;
-    
-    setLoadingProgress(true);
-    try {
-      const res = await axios.get(`${API}/progress/${selectedExercise.id}?days=${timeRange}`);
-      setProgressData(res.data);
-    } catch (error) {
-      console.error("Error fetching progress:", error);
-    } finally {
-      setLoadingProgress(false);
-    }
-  }, [selectedExercise, timeRange]);
-
-  useEffect(() => {
-    if (selectedExercise) {
-      fetchProgress();
-    }
-  }, [selectedExercise, timeRange, fetchProgress]);
-
-  const fetchExercises = async () => {
+  const fetchExercises = useCallback(async () => {
     try {
       const res = await axios.get(`${API}/exercises`);
       setExercises(res.data);
-      // Select first strength exercise by default
       const firstStrength = res.data.find(ex => ex.category === "strength");
       if (firstStrength) {
         setSelectedExercise(firstStrength);
@@ -103,21 +78,29 @@ export default function Progress() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchProgress = async () => {
-    if (!selectedExercise) return;
-    
-    setLoadingProgress(true);
-    try {
-      const res = await axios.get(`${API}/progress/${selectedExercise.id}?days=${timeRange}`);
-      setProgressData(res.data);
-    } catch (error) {
-      console.error("Error fetching progress:", error);
-    } finally {
-      setLoadingProgress(false);
-    }
-  };
+  useEffect(() => {
+    fetchExercises();
+  }, [fetchExercises]);
+
+  useEffect(() => {
+    const fetchProgress = async () => {
+      if (!selectedExercise) return;
+      
+      setLoadingProgress(true);
+      try {
+        const res = await axios.get(`${API}/progress/${selectedExercise.id}?days=${timeRange}`);
+        setProgressData(res.data);
+      } catch (error) {
+        console.error("Error fetching progress:", error);
+      } finally {
+        setLoadingProgress(false);
+      }
+    };
+
+    fetchProgress();
+  }, [selectedExercise, timeRange]);
 
   const isCardio = selectedExercise?.category === "cardio";
 
@@ -260,7 +243,7 @@ export default function Progress() {
                         dataKey="date" 
                         stroke="#71717A"
                         tick={{ fill: '#71717A', fontSize: 12 }}
-                        tickFormatter={(value) => format(parseISO(value), "MMM d")}
+                        tickFormatter={(value) => value ? format(parseISO(value), "MMM d") : ""}
                       />
                       <YAxis 
                         stroke="#71717A"
@@ -319,7 +302,7 @@ export default function Progress() {
                         dataKey="date" 
                         stroke="#71717A"
                         tick={{ fill: '#71717A', fontSize: 12 }}
-                        tickFormatter={(value) => format(parseISO(value), "MMM d")}
+                        tickFormatter={(value) => value ? format(parseISO(value), "MMM d") : ""}
                       />
                       <YAxis 
                         stroke="#71717A"
