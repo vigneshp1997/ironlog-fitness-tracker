@@ -85,7 +85,8 @@ class DashboardStats(BaseModel):
     total_workouts: int
     total_exercises_logged: int
     total_sets: int
-    total_volume: float  # weight * reps
+    total_volume: float  # weight * reps (in kg)
+    total_calories: float  # estimated calories burned
     current_streak: int
     longest_streak: int
     workouts_this_week: int
@@ -98,6 +99,32 @@ class ProgressData(BaseModel):
     total_reps: Optional[int] = None
     duration: Optional[float] = None
     distance: Optional[float] = None
+    calories: Optional[float] = None
+
+# Calorie calculation helpers
+def calculate_strength_calories(weight_kg: float, reps: int, sets: int = 1) -> float:
+    """
+    Estimate calories burned for strength training.
+    Formula: ~0.05 calories per kg lifted per rep (rough estimate)
+    Also factors in metabolic cost of the movement.
+    """
+    base_calories = weight_kg * reps * 0.05 * sets
+    # Add metabolic overhead (rest, recovery between sets)
+    return round(base_calories * 1.3, 1)
+
+def calculate_cardio_calories(duration_minutes: float, intensity: str = "moderate") -> float:
+    """
+    Estimate calories burned for cardio.
+    Based on average 70kg person, MET values:
+    - Light (walking): 3.5 MET
+    - Moderate (jogging): 7 MET
+    - Vigorous (running/HIIT): 10 MET
+    """
+    met_values = {"light": 3.5, "moderate": 7, "vigorous": 10}
+    met = met_values.get(intensity, 7)
+    # Calories = MET × weight(kg) × duration(hours)
+    # Using 70kg as average
+    return round(met * 70 * (duration_minutes / 60), 1)
 
 # Template Models
 class TemplateExercise(BaseModel):
