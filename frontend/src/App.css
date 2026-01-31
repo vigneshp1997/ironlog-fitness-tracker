@@ -1,34 +1,164 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
-}
-
-.App-header {
-    background-color: #0f0f10;
+/* App-specific styles */
+.App {
     min-height: 100vh;
+}
+
+/* Stat value animation */
+.stat-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+}
+
+/* Exercise card */
+.exercise-card {
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.exercise-card:hover {
+    border-color: hsl(var(--primary));
+    background: hsl(var(--secondary));
+}
+
+/* Muscle group badge colors */
+.badge-chest { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.badge-back { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+.badge-shoulders { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+.badge-biceps { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+.badge-triceps { background: rgba(234, 179, 8, 0.2); color: #eab308; }
+.badge-legs { background: rgba(249, 115, 22, 0.2); color: #f97316; }
+.badge-core { background: rgba(236, 72, 153, 0.2); color: #ec4899; }
+.badge-full_body { background: rgba(6, 182, 212, 0.2); color: #06b6d4; }
+.badge-cardio { background: rgba(0, 122, 255, 0.2); color: #007AFF; }
+
+/* Chart container */
+.chart-container {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+/* Workout entry */
+.workout-entry {
+    border-left: 3px solid hsl(var(--primary));
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Set row */
+.set-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 1fr 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid hsl(var(--border));
+}
+
+.set-row:last-child {
+    border-bottom: none;
+}
+
+/* Navigation active state */
+.nav-link {
+    position: relative;
+    transition: color 0.2s ease;
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: hsl(var(--primary));
+    border-radius: 1px;
+}
+
+/* Quick action button */
+.quick-action {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    background: hsl(var(--secondary));
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
 }
 
-.App-link {
-    color: #61dafb;
+.quick-action:hover {
+    background: hsl(var(--secondary));
+    border-color: hsl(var(--primary));
+    transform: translateY(-2px);
 }
 
-@keyframes App-logo-spin {
+/* Recent workout card */
+.recent-workout {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.recent-workout:hover {
+    border-color: hsl(var(--primary) / 0.5);
+}
+
+/* Progress chart tooltip */
+.recharts-tooltip-wrapper {
+    outline: none !important;
+}
+
+.custom-tooltip {
+    background: hsl(var(--card)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+}
+
+/* Calendar day with workout */
+.has-workout {
+    position: relative;
+}
+
+.has-workout::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: hsl(var(--primary));
+    border-radius: 50%;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
     from {
-        transform: rotate(0deg);
+        opacity: 0;
+        transform: translateY(10px);
     }
     to {
-        transform: rotate(360deg);
+        opacity: 1;
+        transform: translateY(0);
     }
 }
+
+.fade-in {
+    animation: fadeIn 0.3s ease forwards;
+}
+
+/* Staggered animation */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
