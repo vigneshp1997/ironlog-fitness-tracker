@@ -237,7 +237,7 @@ class WorkoutTrackerAPITester:
                 stats = response.json()
                 required_fields = [
                     'total_workouts', 'total_exercises_logged', 'total_sets',
-                    'total_volume', 'current_streak', 'longest_streak',
+                    'total_volume', 'total_calories', 'current_streak', 'longest_streak',
                     'workouts_this_week', 'workouts_this_month'
                 ]
                 
@@ -246,7 +246,14 @@ class WorkoutTrackerAPITester:
                     success = False
                     details += f", Missing fields: {missing_fields}"
                 else:
-                    details += f", Stats: {stats['total_workouts']} workouts, {stats['total_sets']} sets, {stats['current_streak']} day streak"
+                    details += f", Stats: {stats['total_workouts']} workouts, {stats['total_sets']} sets, {stats['total_volume']} kg volume, {stats['total_calories']} calories, {stats['current_streak']} day streak"
+                    
+                    # Verify calories field is present and numeric
+                    if 'total_calories' in stats and isinstance(stats['total_calories'], (int, float)):
+                        details += " (✓ Calories tracking working)"
+                    else:
+                        success = False
+                        details += " (✗ Calories field missing or invalid)"
 
             self.log_test("Get Dashboard Stats", success, details)
             return success
