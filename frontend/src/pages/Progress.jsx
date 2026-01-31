@@ -44,8 +44,8 @@ const CustomTooltip = ({ active, payload, label }) => {
         {payload.map((entry, index) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
             {entry.name}: {entry.value?.toLocaleString() || 0}
-            {entry.name.includes("Weight") ? " lbs" : ""}
-            {entry.name.includes("Volume") ? " lbs" : ""}
+            {entry.name.includes("Weight") ? " kg" : ""}
+            {entry.name.includes("Volume") ? " kg" : ""}
             {entry.name.includes("Duration") ? " min" : ""}
             {entry.name.includes("Distance") ? " km" : ""}
           </p>
