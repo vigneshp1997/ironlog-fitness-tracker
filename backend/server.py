@@ -1211,7 +1211,7 @@ if __name__ == "__main__":
         "server:app",   # module:app
         host="0.0.0.0",
         port=8000,
-        reload=True,    # ❌ disable in production
+        reload=False,    # ❌ disable in production
     )
 # @app.on_event("shutdown")
 # async def shutdown_db_client():
