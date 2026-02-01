@@ -343,58 +343,58 @@ export default function Dashboard() {
             <Link to="/history"><Button variant="ghost" size="sm" className="text-primary" data-testid="view-all-history">View All <ChevronRight className="w-4 h-4 ml-1" /></Button></Link>
           </CardHeader>
           <CardContent>
-           {(!Array.isArray(recentWorkouts) || recentWorkouts.length === 0) ? (
-  <div className="text-center py-8 text-muted-foreground">
-    <Dumbbell className="w-10 h-10 mx-auto mb-3 opacity-50" />
-    <p className="font-medium">No workouts yet</p>
-    <Link to="/log">
-      <Button className="mt-3" variant="outline" data-testid="start-workout-btn">
-        Log Your First Workout
-      </Button>
-    </Link>
-  </div>
-) : (
-  <div className="space-y-3">
-    {recentWorkouts.map((workout, index) => (
-      <div
-        key={workout.id}
-        className={`recent-workout fade-in stagger-${index + 1}`}
-        data-testid={`recent-workout-${index}`}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-primary" />
+  {(!Array.isArray(recentWorkouts) || recentWorkouts.length === 0) ? (
+    <div className="text-center py-8 text-muted-foreground">
+      <Dumbbell className="w-10 h-10 mx-auto mb-3 opacity-50" />
+      <p className="font-medium">No workouts yet</p>
+      <Link to="/log">
+        <Button className="mt-3" variant="outline" data-testid="start-workout-btn">
+          Log Your First Workout
+        </Button>
+      </Link>
+    </div>
+  ) : (
+    <div className="space-y-3">
+      {recentWorkouts.map((workout, index) => (
+        <div
+          key={workout.id}
+          className={`recent-workout fade-in stagger-${index + 1}`}
+          data-testid={`recent-workout-${index}`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold">{format(parseISO(workout.date), "EEEE, MMM d")}</p>
+                <p className="text-sm text-muted-foreground">{workout.entries?.length || 0} exercises</p>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold">{format(parseISO(workout.date), "EEEE, MMM d")}</p>
-              <p className="text-sm text-muted-foreground">{workout.entries?.length || 0} exercises</p>
-            </div>
+            <Link to="/history">
+              <Button variant="ghost" size="icon" data-testid={`view-workout-${index}`}>
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            </Link>
           </div>
-          <Link to="/history">
-            <Button variant="ghost" size="icon" data-testid={`view-workout-${index}`}>
-              <ChevronRight className="w-5 h-5" />
-            </Button>
-          </Link>
+
+          <div className="flex flex-wrap gap-2 mt-2">
+            {workout.entries?.slice(0, 4).map((entry, i) => (
+              <span
+                key={i}
+                className={`text-xs px-2 py-1 rounded-full badge-${entry.category === "cardio" ? "cardio" : "chest"}`}
+              >
+                {entry.exercise_name}
+              </span>
+            ))}
+            {workout.entries?.length > 4 && (
+              <span className="text-xs px-2 py-1 rounded-full bg-secondary text-muted-foreground">
+                +{workout.entries.length - 4} more
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {workout.entries?.slice(0, 4).map((entry, i) => (
-            <span
-              key={i}
-              className={`text-xs px-2 py-1 rounded-full badge-${
-                entry.category === "cardio" ? "cardio" : "chest"
-              }`}
-            >
-              {entry.exercise_name}
-            </span>
-          ))}
-          {workout.entries?.length > 4 && (
-            <span className="text-xs px-2 py-1 rounded-full bg-secondary text-muted-foreground">
-              +{workout.entries.length - 4} more
-            </span>
-          )}
-        </div>
-      </div>
-    ))}
-  </div>
-)}
+      ))}
+    </div>
+  )}
+</CardContent>
