@@ -1183,7 +1183,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-frontend_build = ROOT_DIR.parent / "frontend" / "build"
+frontend_build = ROOT_DIR / "build"
 
 app.include_router(api_router)
 
