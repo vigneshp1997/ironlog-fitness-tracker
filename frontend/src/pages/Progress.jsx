@@ -24,7 +24,7 @@ import {
 } from "recharts";
 import { format, parseISO } from "date-fns";
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 const TIME_RANGES = [
   { value: "7", label: "Last 7 Days" },
